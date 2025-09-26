@@ -1,0 +1,10 @@
+---
+applications:
+  - name: excel-api
+    path: .
+    memory: 2048M
+    random-route: true
+    buildpacks:
+      - java_buildpack
+    env:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
