@@ -1,6 +1,7 @@
 package com.example.excelapi;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,48 +25,61 @@ public class ExcelController {
         try (InputStream inputStream = file.getInputStream();
                 Workbook workbook = new XSSFWorkbook(inputStream)) {
 
-            //　部署１
-            
-
-
-
-            //　部署２
-
-
             Sheet sheet = workbook.getSheetAt(0);
-            // B2~B8 -> row 1~7（0-based），row B is cell 1（0-based）
-            for (int i = 1; i <= 7; i++) {
-                Row row = sheet.getRow(i);
-                String cellValue = "";
-                if (row != null) {
-                    Cell cell = row.getCell(1);
-                    if (cell != null) {
-                        switch (cell.getCellType()) {
-                            case STRING:
-                                cellValue = cell.getStringCellValue();
-                                break;
-                            case NUMERIC:
-                                cellValue = String.valueOf(cell.getNumericCellValue());
-                                break;
-                            case BOOLEAN:
-                                cellValue = String.valueOf(cell.getBooleanCellValue());
-                                break;
-                            default:
-                                cellValue = "";
-                        }
-                    }
-                }
-                response.put("B" + (i + 1), cellValue);
+
+            // 指定されたセルと出力項目名のマッピング
+            Map<String, String> cellMap = new HashMap<>();
+            cellMap.put("ご記入年月日", "AE11");
+            cellMap.put("取引を開始する弊社拠点", "G12");
+            cellMap.put("会社名（ふりがな）", "G14");
+            cellMap.put("会社名", "G15");
+            cellMap.put("住所（ふりがな）", "G16");
+            cellMap.put("住所", "G17");
+            cellMap.put("HP", "G18");
+            cellMap.put("役員1", "G20");
+            cellMap.put("役員2", "Q20");
+            cellMap.put("役員3", "AE20");
+            cellMap.put("事業内容", "G21");
+            cellMap.put("設立年(西暦)", "Z21");
+            cellMap.put("法人番号", "AJ21");
+
+            for (Map.Entry<String, String> entry : cellMap.entrySet()) {
+                String label = entry.getKey();
+                String cellRef = entry.getValue();
+                String value = getCellValue(sheet, cellRef);
+                response.put(label, value);
             }
-            System.out.println("response normal:"+response);
+
+            System.out.println("response normal:" + response);
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             response.put("error", "read Excel file fail: " + e.getMessage());
-            System.out.println("response error:"+response);
+            System.out.println("response error:" + response);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
     }
 
+    // セルの取得ヘルパー関数
+    String getCellValue(Sheet sheet, String cellRef) {
+        CellReference ref = new CellReference(cellRef);
+        Row row = sheet.getRow(ref.getRow());
+        if (row != null) {
+            Cell cell = row.getCell(ref.getCol());
+            if (cell != null) {
+                switch (cell.getCellType()) {
+                    case STRING:
+                        return cell.getStringCellValue();
+                    case NUMERIC:
+                        return String.valueOf(cell.getNumericCellValue());
+                    case BOOLEAN:
+                        return String.valueOf(cell.getBooleanCellValue());
+                    default:
+                        return "";
+                }
+            }
+        }
+        return "";
+    }
 }
