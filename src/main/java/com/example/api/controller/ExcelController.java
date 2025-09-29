@@ -1,4 +1,4 @@
-package com.example.excelapi;
+package com.example.api.controller;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellReference;
@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/excelapi")
 public class ExcelController {
 
     @CrossOrigin(origins = "*")
