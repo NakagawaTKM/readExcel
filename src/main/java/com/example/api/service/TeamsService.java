@@ -19,6 +19,9 @@ public class TeamsService {
     @Value("${azure.client-secret}")
     private String clientSecret;
 
+    @Value("${azure.send-user-id}")
+    private String sendUserId;
+
     private String getTokenUrl() {
         return "https://login.microsoftonline.com/" + tenantId + "/oauth2/v2.0/token";
     }
@@ -29,11 +32,17 @@ public class TeamsService {
         try {
             // 1. get access token
             String accessToken = getAccessToken();
+            System.out.println("step1 getAccessToken. Result AccessToken:" + accessToken);
 
             // 2. find user id by email
             String userId = getUserIdByEmail(email, accessToken);
-            if (userId == null) return false;
+            System.out.println("email:" + email);
+            System.out.println("step 2 getUserIdByEmail. Result UserID:" + userId);
 
+            if (userId == null) {
+                System.out.println("step 2 getUserIdByEmail faild. Please check the Email again. Email:" + email);
+                return false;
+            }
             // 3. send Teams message
             return sendTeamsMessage(userId, message, accessToken);
         } catch (Exception e) {
@@ -85,32 +94,47 @@ public class TeamsService {
         String chatId = null;
         String chatUrl = graphApiUrl + "/users/" + userId + "/chats";
         HttpEntity<Void> chatEntity = new HttpEntity<>(headers);
-        ResponseEntity<String> chatResponse = restTemplate.exchange(chatUrl, HttpMethod.GET, chatEntity, String.class);
-
+        ResponseEntity<String> chatResponse = restTemplate.exchange(chatUrl,
+                HttpMethod.GET, chatEntity, String.class);
+        System.out.println("step 3.0 Get chatId result:"+chatResponse);
         if (chatResponse.getStatusCode() == HttpStatus.OK) {
             JSONObject chatJson = new JSONObject(chatResponse.getBody());
             if (chatJson.has("value") && chatJson.getJSONArray("value").length() > 0) {
                 chatId = chatJson.getJSONArray("value").getJSONObject(0).getString("id");
             }
         }
-
+        System.out.println("step 3.1 get chatId successed. ChatId is:" + chatId);
+        chatId=null;
         // if not have exist chatId，create new 1:1 chat
         if (chatId == null) {
             String createChatUrl = graphApiUrl + "/chats";
             JSONObject chatBody = new JSONObject();
             chatBody.put("chatType", "oneOnOne");
-            chatBody.put("members", new org.json.JSONArray()
-                .put(new JSONObject()
+
+            org.json.JSONArray members = new org.json.JSONArray();
+            members.put(new JSONObject()
+                    .put("@odata.type", "#microsoft.graph.aadUserConversationMember")
+                    .put("roles", new org.json.JSONArray().put("owner"))
+                    .put("user@odata.bind", graphApiUrl + "/users/" + sendUserId) // Nakagawa ID fixed
+            );
+
+            members.put(new JSONObject()
                     .put("@odata.type", "#microsoft.graph.aadUserConversationMember")
                     .put("roles", new org.json.JSONArray().put("owner"))
                     .put("user@odata.bind", graphApiUrl + "/users/" + userId)
-                )
             );
+
+            chatBody.put("members", members);
+            System.out.println("members"+members.toString());
+
             HttpEntity<String> createChatEntity = new HttpEntity<>(chatBody.toString(), headers);
-            ResponseEntity<String> createChatResponse = restTemplate.exchange(createChatUrl, HttpMethod.POST, createChatEntity, String.class);
-            if (createChatResponse.getStatusCode() == HttpStatus.CREATED || createChatResponse.getStatusCode() == HttpStatus.OK) {
+            ResponseEntity<String> createChatResponse = restTemplate.exchange(createChatUrl, HttpMethod.POST,
+                    createChatEntity, String.class);
+            if (createChatResponse.getStatusCode() == HttpStatus.CREATED
+                    || createChatResponse.getStatusCode() == HttpStatus.OK) {
                 JSONObject createdChatJson = new JSONObject(createChatResponse.getBody());
                 chatId = createdChatJson.getString("id");
+                System.out.println("step 3.2 Create chatId successed. ChatId is:" + chatId);
             } else {
                 return false;
             }

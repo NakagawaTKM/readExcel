@@ -1,9 +1,10 @@
 ---
 applications:
-  - name: excel-api
+  - name: cf-api
     path: .
     memory: 2048M
-    random-route: true
+    routes:
+      - route: cf-api-excel-teams-dev-01.cfapps.us10-001.hana.ondemand.com
     buildpacks:
       - java_buildpack
     env:

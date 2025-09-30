@@ -1,8 +1,13 @@
-excel-api-dist
 target
 ### Java ###
 # Compiled class file
 *.class
+
+# properties
+*.properties
+
+# Back file
+*.bak
 
 # Log file
 *.log
@@ -27,3 +32,5 @@ hs_err_pid*
 replay_pid*
 
 # End of https://www.toptal.com/developers/gitignore/api/java
+target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
