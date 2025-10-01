@@ -1,5 +1,6 @@
 package com.example.api.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -22,6 +23,9 @@ public class TeamsService {
     @Value("${azure.send-user-id}")
     private String sendUserId;
 
+    @Autowired
+    private TokenService tokenService;
+
     private String getTokenUrl() {
         return "https://login.microsoftonline.com/" + tenantId + "/oauth2/v2.0/token";
     }
@@ -31,7 +35,9 @@ public class TeamsService {
     public boolean sendMessageToUser(String email, String message) {
         try {
             // 1. get access token
-            String accessToken = getAccessToken();
+            // String accessToken = getAccessToken(); // Clinet Credential Flow
+            String accessToken = tokenService.getToken(); // Auth Code Flow
+
             System.out.println("step1 getAccessToken. Result AccessToken:" + accessToken);
 
             // 2. find user id by email

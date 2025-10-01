@@ -3,10 +3,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
+
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.json.JSONObject;
 
 @Service
 public class TokenService {
+
+    private static final ConcurrentHashMap<String, String> tokenStore = new ConcurrentHashMap<>();
+    private static String TOKEN = "TOKEN";
 
     @Value("${oauth.client-id}")
     private String clientId;
@@ -37,5 +43,13 @@ public class TokenService {
         System.out.println("step 0 user get AccessTokenWithAuthCode. get response:"+response);
         JSONObject json = new JSONObject(response.getBody());
         return json.getString("access_token");
+    }
+
+    public void storeToken(String accessToken) {
+        tokenStore.put(TOKEN, accessToken);
+    }
+
+    public String getToken() {
+        return tokenStore.get(TOKEN);
     }
 }
